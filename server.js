@@ -17,15 +17,19 @@ app.get('/:room', (req,res) => {
     res.render('room', { roomId: req.params.room }) // ejs >> ROOM_ID
 })
 
+// 연결이 발생하면
 io.on('connection', socket => {
+    // script.js 에서 join-room 이벤트로 보내준 정보를 받아옴
     socket.on('join-room', (roomId, userId, userName) => {
+        // roomId에 들어감
         socket.join(roomId);
+        // roomId에 있는 사람들에게 들어온 유저의 id와 name을 보내줌
         socket.to(roomId).broadcast.emit('user-connected', userId, userName)
-
+        // 누군가 연결을 끊으면 roomId에 있는 사람들에게 나간 유저의 id와 name을 보내줌
         socket.on('disconnect', () => {
             socket.to(roomId).broadcast.emit('user-disconnected', userId, userName)
         })
-
+        // script.js에서  message 이벤트로 보내준 정보를 받아옴
         socket.on('message', (message) => {
             socket.to(roomId).broadcast.emit('message', message);
         })

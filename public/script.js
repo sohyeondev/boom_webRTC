@@ -1,96 +1,107 @@
 const socket = io('/');
 
+// peer 생성 및 이름 설정(id는 랜덤)
 const myPeer = new Peer()
 const userName = prompt("Enter your name")
 const userlist = document.getElementById("userlist")
-const myName = document.getElementById('myName')
 
+// ROOM_ID와 userId, userName을 서버에 보냄(emit)
 myPeer.on('open', (userId) => {
-    
-    console.log("[userID] "+userId+" [userName] "+userName)
-    socket.emit('join-room', ROOM_ID, userId, userName) // >> server.js socket.on(roomId, userId)
-    myName.innerHTML = userName
+    console.log("myPeer.on [userID] "+userId+" [userName] "+userName)
+    socket.emit('join-room', ROOM_ID, userId, userName)
+    // user 창에 이름 추가
+    const myName = document.getElementById('myName')
+    myName.textContent = userName
     myName.style.color = "green"
-
 })
 
-myPeer.on('connection', (userId) => {
-    console.log("go[userID] "+userId+" [userName] "+userName)
-})
-
-const myVideo = document.getElementById('myVideo');
-const peers = {};
-
+// 내 미디어 장치 불러오기
 let myVideoStream;
+const myVideo = document.getElementById('myVideo');
 navigator.mediaDevices.getUserMedia({
     video: true,
     audio: true
 }).then(stream => {
-    myVideoStream = stream;
-    myVideo.srcObject = stream;
-
+    myVideoStream = stream; // 불러온 미디어 장치 stream을 myVideoStream에 저장
+    myVideo.srcObject = stream; // stream을 myVideo의 내용물로 보내줌
+    // 다른 유저가 call을 보냄
     myPeer.on('call', (call) => {
-        for (key in call) {
-            console.log(call[key])
-        }
-        call.answer(stream);
+        call.answer(stream); // call 보낸 유저한테 answer로 내 stream을 보내줌
+
+        // call 보낸 유저의 화면에 내 stream이 보여짐
+        // video 태그 만들고, addVideoStream 함수 실행해서 내 stream을 call 보낸 유저한테 보내줌
         const video = document.createElement('video')
-        const user = document.createElement('li')
-        // 상대방 화면에서 내 화면이 보이게
         call.on('stream', remoteVideoStream => {
-            addVideoStream(video, user, userName, remoteVideoStream);
+            addVideoStream(video, remoteVideoStream);
         });
     });
 
-    // 내 화면에서 상대방이 보이게
+    // server.js에서 emit으로 보낸 정보를 받아옴
+    // 새로 연결된 유저의 stream을 받아와서 내 화면에 video 태그를 추가함
     socket.on('user-connected', (userId, userName) => {
-        connectToNewUser(userId, userName, stream);
         console.log("[userID] "+userId+" [userName] "+userName)
-    });
+        connectToNewUser(userId, stream);
 
+        // 활동중인 유저창에 유저 추가
+        const user = document.createElement('li')
+        user.className = "actUsers"
+        user.textContent = userName
+        userlist.appendChild(user)
+
+        // 채팅창에 유저 참가 알림
+        const joinMsg = document.createElement('div')
+        joinMsg.textContent = "join : "+userName
+        chatBox.appendChild(joinMsg)
+    });
 });
 
+// videostream을 video에 추가하고 화면에 띄움
+const videoGrid = document.getElementById('video-grid');
+function addVideoStream(video, stream) {
+    video.srcObject = stream;
+    video.addEventListener('loadedmetadata', () => {
+        video.play();
+    })
+    videoGrid.append(video);
+}
+
+// 새로운 유저가 오면 stream을 추가하고 연결이 끊기면 삭제함
+const peers = {};
+function connectToNewUser(userId, stream) {
+    const call = myPeer.call(userId, stream);
+    const video = document.createElement('video');
+    
+    call.on('stream', (userVideoStream) => {
+        addVideoStream(video, userVideoStream);
+    })
+    call.on('close', () => {
+        video.remove();
+    })
+    peers[userId] = call;
+}
+
+// 연결끊김
 socket.on('user-disconnected', (userId, userName) => {
+    // 활동중인 유저창에서 연결이 끊긴 유저 삭제
+    const user = document.getElementsByClassName("actUsers")
+    for (i in document.getElementsByClassName("actUsers")) {
+        if (user[i].textContent == userName) {
+            user[i].remove();
+        }
+    }
+    // 채팅창에 유저가 떠난 걸 알림
+    const leaveMsg = document.createElement('div')
+    leaveMsg.textContent = "leave : "+userName
+    chatBox.appendChild(leaveMsg)
+
+    // peers[userId]에 close() 이벤트 발생 >> call.on('close') 발생(?)
     if (peers[userId]) {
         peers[userId].close();
         delete peers[userId]
     }
 });
 
-function connectToNewUser(userId, userName, stream) {
-    const call = myPeer.call(userId, stream);
-    const video = document.createElement('video');
-    const user = document.createElement('li')
-
-    const connUser = document.createElement('div')
-    connUser.innerHTML = "join : "+userName
-    chatBox.appendChild(connUser)
-    
-    call.on('stream', (userVideoStream) => {
-        addVideoStream(video, user, userName, userVideoStream);
-    })
-    call.on('close', () => {
-        const disConnUser = document.createElement('div')
-        disConnUser.innerHTML = "leave : "+userName
-        chatBox.appendChild(disConnUser)
-        video.remove();
-        user.remove();
-    })
-
-    peers[userId] = call;
-}
-
-const videoGrid = document.getElementById('video-grid');
-function addVideoStream(video, user, userName, stream) {
-    video.srcObject = stream;
-    video.addEventListener('loadedmetadata', () => {
-        video.play();
-    })
-    videoGrid.append(video);
-    user.innerHTML = userName
-    userlist.append(user)
-}
-
+// 내 비디오 중지
 const stopVideoBtn = document.getElementById("stopVideo")
 stopVideoBtn.addEventListener("click", () => {
     const enabled = myVideoStream.getVideoTracks()[0].enabled;
@@ -103,6 +114,7 @@ stopVideoBtn.addEventListener("click", () => {
     }
 })
 
+// 내 오디오 중지
 const muteAudioBtn = document.getElementById("muteAudio")
 muteAudioBtn.addEventListener("click", () => {
     const enabled = myVideoStream.getAudioTracks()[0].enabled;
@@ -115,6 +127,7 @@ muteAudioBtn.addEventListener("click", () => {
     }
 })
 
+// 활동중인 유저 창 보이게
 const mainLeft = document.getElementById("main_left")
 const mainRight = document.getElementById("main_right")
 const activeUsers = document.getElementById("activeUsers")
@@ -152,6 +165,7 @@ inviteBtn.addEventListener("click", (e) => {
     );
 });
 
+// 채팅창 보이게
 const showChatBtn = document.getElementById("showChat");
 showChatBtn.addEventListener("click", () => {
     if (messageChat.style.display == "flex") {
@@ -177,6 +191,7 @@ showChatBtn.addEventListener("click", () => {
     }
 })
 
+// 화면공유 기능
 const sharingScreenBtn = document.getElementById("sharingScreen");
 sharingScreenBtn.addEventListener("click", () => {
     startScreenShare();
@@ -232,6 +247,7 @@ function stopScreenSharing() {
     myVideo.srcObject = myVideoStream;
 }
 
+// 현재 날짜 찍히게(나중에 녹화본 DB에 보낼 때 제목?)
 var date = new Date();
 var year = date.getFullYear().toString();
 var month = ("0"+(date.getMonth() + 1)).slice(-2);
@@ -241,6 +257,7 @@ var minute = ("0"+date.getMinutes()).slice(-2);
 var second = ("0"+date.getSeconds()).slice(-2);
 var today = year+month+day+"."+hour+minute+second
 
+// 녹화 및 다운로드
 const recordBtn = document.getElementById('recording');
 const download = document.getElementById('download');
 let blobs;
@@ -292,17 +309,15 @@ recordBtn.addEventListener('click', async () => {
         rec.onstop = async () => {
 
             blob = new Blob(blobs, {type: 'video/webm'});
-            console.log(blob)
             let url = URL.createObjectURL(blob);
-            console.log(URL)
-            download.href = url;
             console.log(download.href)
+            download.href = url;
+            console.log(url)
             download.download = today+".webm";
 
         };
         recordBtn.textContent = "download"
         rec.start();
-        console.log(allStream)
     } else {
 
         rec.stop(); // 화면 녹화 종료 및 녹화된 영상 다운로드
@@ -317,6 +332,7 @@ recordBtn.addEventListener('click', async () => {
 
 });
 
+// 떠나는 버튼인데 실행 안됨
 const leaveBtn = document.getElementById("leave");
 leaveBtn.addEventListener("click", (e) => {
     if (confirm("Close BOOMTING?")) {
@@ -325,6 +341,7 @@ leaveBtn.addEventListener("click", (e) => {
     }
 })
 
+// 채팅기능
 const sendBtn = document.getElementById('sendBtn');
 const chatBox = document.getElementById('chatBox');
 const textMsg = document.getElementById('textMsg');
