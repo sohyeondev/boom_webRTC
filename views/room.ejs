@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOMTING</title>
+    <script>
+        const ROOM_ID = "<%= roomId %>"
+    </script>
+    <script defer src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script defer src="/socket.io/socket.io.js"></script>
+    <script defer src="script.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="header">
+        <h3>BOOMTING</h3>
+    </div>
+    <div id="main">
+        <div id="main_left">
+            <div id="videos">
+                <div id="video-grid">
+                    <video id="myVideo" autoplay muted playsinline></video>
+                </div>
+            </div>
+            <div id="btns">
+                <div id="btns_left">
+                    <button id="stopVideo">Video</button>
+                    <button id="muteAudio">Audio</button>
+                </div>
+                <div id="btns_center">
+                    <button id="showUsers">users</button>
+                    <button id="showChat">chat</button>
+                    <button id="sharingScreen">screen</button>
+                    <button id="recording">record</button>
+                    <a id="download" style="display:none"></a>
+                </div>
+                <div id="btns_right">
+                    <button id="leave">leave</button>
+                </div>
+            </div>        
+        </div>
+        <div id="main_right">
+            <div id="activeUsers">
+                <div id="actTop">
+                    <h3>활동중인 유저<button id="invite" right=0>invite</button></h3>
+                    <ul id="userlist">
+                        <li id="myName"></li>
+                    </ul>
+                </div>
+                <div id="actBot">
+                </div>
+            </div>
+            <div id="messageChat">
+                <h3>채팅</h3>
+                <div id="chatBox"></div>
+                <div id="sendBox">
+                    <input id="textMsg" type="text"autocomplete="off" /><input type="button" id="sendBtn" value="send"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

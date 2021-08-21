@@ -1,0 +1,126 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+#header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 8vh;
+    position: relative;
+    width: 100%;
+}
+
+#main {
+    overflow: hidden;
+    height: 92vh;
+    display: flex;
+}
+
+#main_left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#videos {
+    flex: 0.9;
+    display: flex;
+    overflow: auto;
+    margin:1rem;
+    align-items: center;
+}
+
+#video-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 200px);
+    grid-auto-rows: repeat(5, 200px);
+    column-gap: 1rem;
+    row-gap: 1rem;
+}
+
+video {
+    border-radius: 1rem;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#btns {
+    flex: 0.1;
+    padding: 1rem;
+    display: flex;
+}
+
+#btns_left {
+    flex: 0.25;
+}
+
+#btns_center {
+    flex: 0.5;
+}
+
+#btns_right {
+    flex: 0.25;
+}
+
+#main_right {
+    display: none;
+    flex-direction: column;
+}
+
+#activeUsers {
+    display : none;
+    flex-direction: column;
+}
+
+ul {
+    list-style: none;
+}
+
+#messageChat {
+    display : none;
+    flex: 1;
+    background-color: skyblue;
+    flex-direction: column;
+}
+
+#chatBox {
+    flex: 0.9;
+    overflow: auto;
+}
+
+#sendBox {
+    display: flex;
+    flex: 0.1;
+}
+
+#textMsg {
+    width: 85%;
+}
+
+#sendBtn {
+    width: 14%;
+}
+
+.others-message-wrapper {
+    max-width: 70%;
+    width:fit-content;
+    align-items: left;
+    background-color: white;
+    border-radius: 5px;
+    padding: 3px 5px;
+    margin: 5px auto 5px 5px;
+}
+
+.my-message-wrapper {
+    max-width: 70%;
+    width: fit-content;
+    text-align: right;
+    align-items: right;
+    background-color: yellowgreen;
+    border-radius: 5px;
+    padding: 3px 5px;
+    margin: 5px 5px 5px auto;
+}
